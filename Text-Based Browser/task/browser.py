@@ -1,3 +1,5 @@
+import os
+import sys
 
 nytimes_com = '''
 This New Liquid Is Magnetic, and Mesmerizing
@@ -35,8 +37,34 @@ Twitter and Square Chief Executive Officer Jack Dorsey
 '''
 
 pages = {'bloomberg.com': bloomberg_com, 'nytimes.com': nytimes_com}
-while True:
-    option = input()
-    if option == 'exit':
-        break
-    print(pages[option])
+
+
+def save_file(path, name):
+    with open(os.path.join(path, name.split('.')[0]), 'wt') as f:
+        f.write(pages[name])
+
+
+def read_file(path, name):
+    with open(os.path.join(path, name), 'rt') as f:
+        print(f.read())
+
+
+def main():
+    directory = sys.argv[1]
+    if not os.access(directory, os.F_OK):
+        os.mkdir(directory)
+    while True:
+        option = input()
+        if option == 'exit':
+            break
+        elif option in os.listdir(directory):
+            read_file(directory, option)
+        elif option in pages:
+            print(pages[option])
+            save_file(directory, option)
+        else:
+            print('Error: Invalid URL')
+
+
+if __name__ == '__main__':
+    main()
