@@ -1,3 +1,4 @@
+from collections import deque
 import os
 import sys
 
@@ -50,6 +51,7 @@ def read_file(path, name):
 
 
 def main():
+    stack = deque()
     directory = sys.argv[1]
     if not os.access(directory, os.F_OK):
         os.mkdir(directory)
@@ -57,10 +59,15 @@ def main():
         option = input()
         if option == 'exit':
             break
+        elif option == 'back':
+            if stack:
+                stack.pop()
+                print(stack.pop())
         elif option in os.listdir(directory):
             read_file(directory, option)
         elif option in pages:
             print(pages[option])
+            stack.append(pages[option])
             save_file(directory, option)
         else:
             print('Error: Invalid URL')
