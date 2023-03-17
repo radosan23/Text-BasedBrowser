@@ -1,43 +1,59 @@
+from bs4 import BeautifulSoup
 from collections import deque
 import os
+import re
 import requests
 import sys
 
 
-def save_file(path, name, content):
-    with open(os.path.join(path, name.split('.')[0]), 'wt', encoding='utf-8') as f:
-        f.write(content)
+class Browser:
+    def __init__(self):
+        self.stack = deque()
+        self.previous = None
+        self.directory = sys.argv[1]
+        if not os.access(self.directory, os.F_OK):
+            os.mkdir(self.directory)
 
+    def save_file(self, name, content):
+        with open(os.path.join(self.directory, name.split('.')[0]), 'wt', encoding='utf-8') as f:
+            f.write(content)
 
-def read_file(path, name):
-    with open(os.path.join(path, name), 'rt', encoding='utf-8') as f:
-        print(f.read())
+    def read_file(self, name):
+        with open(os.path.join(self.directory, name), 'rt', encoding='utf-8') as f:
+            print(f.read())
+
+    def get_webpage(self, url):
+        try:
+            r = requests.get(url if url.startswith('https://') else 'https://' + url)
+            soup = BeautifulSoup(r.content, 'html.parser')
+            content = '\n'.join([x.text.strip() for x in
+                                 soup.find_all(['p', 'a', 'ul', 'ol', 'li', re.compile(r'^h\d')])])
+        except requests.exceptions.ConnectionError:
+            print('Error: Invalid URL')
+        else:
+            print(content)
+            if self.previous:
+                self.stack.append(self.previous)
+            self.previous = content
+            self.save_file(url, content)
+
+    def menu(self):
+        while True:
+            option = input()
+            if option == 'exit':
+                break
+            elif option == 'back':
+                if self.stack:
+                    print(self.stack.pop())
+            elif option in os.listdir(self.directory):
+                self.read_file(option)
+            else:
+                self.get_webpage(option)
 
 
 def main():
-    stack = deque()
-    temp = None
-    directory = sys.argv[1]
-    if not os.access(directory, os.F_OK):
-        os.mkdir(directory)
-    while True:
-        option = input()
-        if option == 'exit':
-            break
-        elif option == 'back':
-            if stack:
-                print(stack.pop())
-        elif option in os.listdir(directory):
-            read_file(directory, option)
-        elif '.' in option:
-            r = requests.get(option if option.startswith('https://') else 'https://' + option)
-            print(r.text)
-            if temp:
-                stack.append(temp)
-            temp = r.text
-            save_file(directory, option, r.text)
-        else:
-            print('Error: Invalid URL')
+    browser = Browser()
+    browser.menu()
 
 
 if __name__ == '__main__':
