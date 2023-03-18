@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
 from collections import deque
+from colorama import Fore
 import os
 import re
 import requests
@@ -25,12 +26,12 @@ class Browser:
     def get_webpage(self, url):
         try:
             r = requests.get(url if url.startswith('https://') else 'https://' + url)
-            soup = BeautifulSoup(r.content, 'html.parser')
-            content = '\n'.join([x.text.strip() for x in
-                                 soup.find_all(['p', 'a', 'ul', 'ol', 'li', re.compile(r'^h\d')])])
         except requests.exceptions.ConnectionError:
             print('Error: Invalid URL')
         else:
+            soup = BeautifulSoup(r.content, 'html.parser')
+            content = '\n'.join([Fore.BLUE + x.text.strip() + Fore.RESET if x.has_attr('href') else x.text.strip() for x in
+                                 soup.find_all(['p', 'a', re.compile(r'^h\d')])])
             print(content)
             if self.previous:
                 self.stack.append(self.previous)
